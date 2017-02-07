@@ -57,6 +57,7 @@
     <Library binaryName="documentation" excludeFromBuild="true" id="648483710" label="documentation">
       <File filePath="LICENSE"/>
       <File filePath="README.md"/>
+      <File filePath="weekcalendar.png"/>
     </Library>
     <Library binaryName="imports" id="9828396" label="imports">
       <VirtualFolder label="components">
