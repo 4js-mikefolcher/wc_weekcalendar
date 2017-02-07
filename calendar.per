@@ -1,0 +1,48 @@
+Action Defaults
+  Action showdesc        (DefaultView=No)
+  Action new             (DefaultView=No)
+  Action update          (DefaultView=No)
+  Action move            (DefaultView=No)
+  Action remove          (ContextMenu=yes, Text=%"Delete")
+  Action refresh         (Text=%"Refresh")
+End
+
+Layout (Text=%"Calendar")
+  Grid
+  {
+  [wcagn                                                        ]
+  [                                                             ]
+  [                                                             ]
+  [                                                             ]
+  [                                                             ]
+  [                                                             ]
+  [                                                             ]
+  [                                                             ]
+  [                                                             ]
+  [                                                             ]
+  [                                                             ]
+  [                                                             ]
+  [                                                             ]
+  [                                                             ]
+  [                                                             ]
+  [                                                             ]
+  [                                                             ]
+  [                                                             ]
+  [                                                             ]
+  [eti                                             ][cre        ]
+  [ede                                                          ]
+  [                                                             ]
+  [                                                             ]
+  }
+  End
+End
+
+Attributes
+  WebComponent wcagn = formonly.calendarPipe,
+                       ComponentType="wcweekcalendar",
+                       SizePolicy=Dynamic,
+                       Stretch=Both;
+  Edit         eti   = formonly.eventtitle;
+  CheckBox     cre   = formonly.recurrent, Text=%"Recurrent", ValueChecked=True, ValueUnchecked=False;
+  TextEdit     ede   = formonly.eventdesc, Stretch=Both;
+End

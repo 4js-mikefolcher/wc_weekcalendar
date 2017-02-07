@@ -1,0 +1,34 @@
+Layout (Text=%"Event")
+  Grid
+  {
+  [lb0][use                      ]
+  [lb1][dts       : :lb2:hrs     ]
+  [lb3][dte       : :lb4:hre     ]
+       [dfu                      ]
+  [lb5][edt                      ]
+  [lb6][ede                      ]
+       [                         ]
+       [                         ]
+  }
+  End
+End
+
+Attributes
+  Label lb0 : lb0, Text=%"User";
+  Label lb1 : lb1, Text=%"Starts";
+  Label lb2 : lb2, Text=%"Hour";
+  Label lb3 : lb3, Text=%"Ends";
+  Label lb4 : lb4, Text=%"Hour";
+  Label lb5 : lb5, Text=%"Title";
+  Label lb6 : lb6, Text=%"Description";
+
+  Phantom              formonly.Id;
+  ComboBox     use   = formonly.UserId, Initializer=cbCalendarUsers, Not Null;
+  DateEdit     dts   = formonly.DateStart;
+  TimeEdit     hrs   = formonly.HourStart;
+  DateEdit     dte   = formonly.DateEnd;
+  TimeEdit     hre   = formonly.HourEnd;
+  CheckBox     dfu   = formonly.FullDayLong, Text=%"All day long", Not Null, Default=False, ValueChecked=True, ValueUnchecked=False;
+  Edit         edt   = formonly.Title;
+  TextEdit     ede   = formonly.EventDesc, Stretch=Both;
+End
