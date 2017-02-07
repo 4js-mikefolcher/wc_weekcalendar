@@ -1,7 +1,7 @@
 # wc_calendar
 A library that uses a web component to render a multi user calendar.
 
-![Week Calendar (GDC)](https://github.com/FourjsGenero/wc_weekcalendar/weekcalendar.png)
+![Week Calendar (GDC)](https://github.com/FourjsGenero/wc_weekcalendar/blob/master/weekcalendar.png)
 
 The web component uses jQuery.weekCalendar v2.0-dev:
 http://github.com/themouette/jquery-week-calendar
