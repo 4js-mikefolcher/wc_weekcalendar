@@ -5,11 +5,20 @@ Action Defaults
   Action move            (DefaultView=No)
   Action remove          (ContextMenu=yes, Text=%"Delete")
   Action refresh         (Text=%"Refresh")
+  Action caloptions      (Text=%"Options")
+  Action previous        (Text=%"")
+  Action nowadays        (Text=%"Today", Image="fa-circle-o")
+  Action next            (Text=%"")
+  Action oneday          (Text=%"1 day")
+  Action threedays       (Text=%"3 days")
+  Action fivedays        (Text=%"5 days")
+  Action sevendays       (Text=%"Full week")
 End
 
 Layout (Text=%"Calendar")
   Grid
   {
+  [btpw:bttd:btnw:                          :bt1d:bt3d:bt5d:bt7d]
   [wcagn                                                        ]
   [                                                             ]
   [                                                             ]
@@ -38,6 +47,13 @@ Layout (Text=%"Calendar")
 End
 
 Attributes
+  Button       btpw  : previous;
+  Button       bttd  : nowadays;  -- today is a keyword...
+  Button       btnw  : next;
+  Button       bt1d  : oneday;
+  Button       bt3d  : threedays;
+  Button       bt5d  : fivedays;
+  Button       bt7d  : sevendays;
   WebComponent wcagn = formonly.calendarPipe,
                        ComponentType="wcweekcalendar",
                        SizePolicy=Dynamic,

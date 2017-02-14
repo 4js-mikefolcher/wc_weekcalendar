@@ -1,7 +1,7 @@
 //ChG: Some king of wrapper that links calendar.4gl and jquery.weekcalendar.js together
 
-//var myEventList = [{"id":1,"userId":1,"start":"2017-01-27 09:30:00","end":"2017-01-27 10:00:00","title":"Test data","eventdesc":"FF91 Project","eventparent":0}];
-var myEventList = [];
+//var myEventList = {"options":{"timeslotsPerHour": 3},"events":',[{"id":1,"userId":1,"start":"2017-01-27 09:30:00","end":"2017-01-27 10:00:00","title":"Test data","eventdesc":"FF91 Project","eventparent":0}]};
+var myEventList = {"options":{},"events":[]};
 
 // Genero Webcomponent API
 onICHostReady = function(version) {
@@ -13,21 +13,37 @@ onICHostReady = function(version) {
   gICAPI.onData = function(eventList) {
     //format and update calendar for each event coming from 4GL
     var eventObj = false;
+    var optionObj = false;
+
     try{
       eventObj = JSON.parse(eventList);
-      eventObj = eventObj.out;
+      optionObj = eventObj.options;
+      eventObj = eventObj.events;
     }catch (error) {
       eventObj = false;
     }
 
     if(eventObj) {
-      myEventList.splice(0,myEventList.length);
+      myEventList.options = optionObj;
+    }
+
+    if(eventObj) {
+      myEventList.events.splice(0,myEventList.length);
       for (var i = 0; i < eventObj.length; i++) {
         $("#calendar").weekCalendar("updateEvent",eventObj[i]);
-        myEventList.push(eventObj[i]);
+        myEventList.events.push(eventObj[i]);
       }
     }
   }
+};
+
+function launchFunction( fctName ) {
+      $('#calendar').weekCalendar(fctName);
+};
+
+function redraw(nbDays) {
+      myEventList.options.daysToShow = nbDays;
+      $('#calendar').weekCalendar('setDaysToShow',myEventList.options.daysToShow);
 };
 
 function setFglEvents() {
@@ -36,21 +52,21 @@ function setFglEvents() {
 
 function setFglUsers( strJsonUsers ) {
     $('#calendar').weekCalendar({users: JSON.parse(strJsonUsers)});
-  };
+};
 
 function removeEvent( eventId ) {
     $('#calendar').weekCalendar('removeEvent',eventId);
-  };
+};
 
 function getStartHour() {
   var bhObj = $('#calendar').weekCalendar('option','businessHours');
   return(bhObj.start);
-  };
+};
 
 function getEndHour() {
   var bhObj = $('#calendar').weekCalendar('option','businessHours');
   return(bhObj.end);
-  };
+};
 
 // Once document is loaded
 $(document).ready(function() {
@@ -59,6 +75,7 @@ $(document).ready(function() {
     // default selected day
     date: 'today',
     // 0 = Sunday, 1 = Monday, 2 = Tuesday, ... , 6 = Saturday
+    buttons: false,
     firstDayOfWeek:1,
     dateFormat: 'M d, Y',
     use24Hour: false,
@@ -83,6 +100,7 @@ $(document).ready(function() {
     switchDisplay: {'1 day': 1,'3 days': 3,'Work week': 5, 'Full week': 7},
     // Minimum of 15mins slots
     timeslotsPerHour: 4,
+    timeslotHeight: 20,
     height: function() {
       return $(window).height() - $('h1').outerHeight() - $('.description').outerHeight();
     },

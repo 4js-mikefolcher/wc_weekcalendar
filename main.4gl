@@ -21,7 +21,11 @@ Main
     dateEnd    Date,
     hourEnd    DateTime Hour To Second,
     wEvent     calendar.tEvent,
-    retCod     Integer
+    retCod     Integer,
+    aEvents    Dynamic Array Of String,
+    aTtyAttr   Dynamic Array Of String
+
+  Call ui.Interface.loadStyles("wc_weekcalendar")
 
   -- Database used is Sqlite with in-memory feature
   -- DB definition can be found at the bottom of this file.
@@ -37,6 +41,23 @@ Main
 
     Dialog Attributes (Unbuffered)
       SubDialog calendar.dlgCalendar
+      Display Array aEvents To srEvents.*
+      End Display
+
+      Before Dialog
+        Call Dialog.setArrayAttributes("srevents",aTtyAttr)
+        Call getEventList(aEvents,aTtyAttr,calendar.getUserIdByPosition(1))
+        If aEvents.getLength() >= 2 Then
+          Call Dialog.setCurrentRow("srevents",2)
+        End If
+
+      On Action showDesc
+        Call calendar.readWcEvent(calendar.calendarPipe) Returning wEvent.*
+        Let calendar.currentEventRowNo = calendar.displayEventDetails(wEvent.id)
+        Call getEventList(aEvents,aTtyAttr,wEvent.userId)
+        If aEvents.getLength() >= 2 Then
+          Call Dialog.setCurrentRow("srevents",2)
+        End If
 
       On Action new
         Let calendar.currentEventRowNo = calendar.displayEventDetails(0)
@@ -71,6 +92,10 @@ Main
           End For
         End If
         Call calendar.refreshEvents()
+        Call getEventList(aEvents,aTtyAttr,wEvent.userId)
+        If aEvents.getLength() >= 2 Then
+          Call Dialog.setCurrentRow("srevents",2)
+        End If
 
       -- drag&drop event or change length of event
       On Action move
@@ -84,6 +109,10 @@ Main
           Call modifyEvent( wEvent.* )
         End If
         Call calendar.refreshEvents()
+        Call getEventList(aEvents,aTtyAttr,wEvent.userId)
+        If aEvents.getLength() >= 2 Then
+          Call Dialog.setCurrentRow("srevents",2)
+        End If
 
       -- click an event
       On Action update
@@ -97,6 +126,10 @@ Main
           Call modifyEvent( wEvent.* )
         End If
         Call calendar.refreshEvents()
+        Call getEventList(aEvents,aTtyAttr,wEvent.userId)
+        If aEvents.getLength() >= 2 Then
+          Call Dialog.setCurrentRow("srevents",2)
+        End If
 
       -- Pass the mouse cursor over the event and press delete button
       On Action remove
@@ -113,6 +146,10 @@ Main
             End While
           End If
           Let calendar.currentEventRowNo = calendar.displayEventDetails(0)
+          Call getEventList(aEvents,aTtyAttr,wEvent.userId)
+          If aEvents.getLength() >= 2 Then
+            Call Dialog.setCurrentRow("srevents",2)
+          End If
         End If
 
       On Action close
@@ -319,6 +356,54 @@ Function getEventLastLink( id )
   End If
 
   Return nextLink
+End Function
+
+Function getEventList(aEvents,aTtyAttr,userId)
+  Define
+    aEvents    Dynamic Array Of String,
+    aTtyAttr   Dynamic Array Of String,
+    userId     Integer,
+    dbEvent    tDbEvent,
+    timeTitles SmallInt
+
+  Call aEvents.clear()
+  Call aTtyAttr.clear()
+
+  Let timeTitles = 0
+
+  Declare cUserEvents Cursor From "Select eventid,userid,datestart,hourstart,dateend,hourend,eventtitle,eventdesc,eventparent From events Where userid = ? Order By datestart,hourstart"
+  Foreach cUserEvents Using userId Into dbEvent.*
+    Case
+      When dbEvent.dateStart < Today-1 And timeTitles < 1
+        Call aEvents.appendElement()
+        Let aTtyAttr[aEvents.getLength()] = "blue reverse"
+        Let aEvents[aEvents.getLength()] = %"Past"
+        Let timeTitles = 1
+      When dbEvent.dateStart = Today-1 And timeTitles < 2
+        Call aEvents.appendElement()
+        Let aTtyAttr[aEvents.getLength()] = "blue reverse"
+        Let aEvents[aEvents.getLength()] = %"Yesterday"
+        Let timeTitles = 2
+      When dbEvent.dateStart = Today And timeTitles < 3
+        Call aEvents.appendElement()
+        Let aTtyAttr[aEvents.getLength()] = "blue reverse"
+        Let aEvents[aEvents.getLength()] = %"Today"
+        Let timeTitles = 3
+      When dbEvent.dateStart = Today+1 And timeTitles < 4
+        Call aEvents.appendElement()
+        Let aTtyAttr[aEvents.getLength()] = "blue reverse"
+        Let aEvents[aEvents.getLength()] = %"Tomorrow"
+        Let timeTitles = 4
+      When dbEvent.dateStart > Today+1 And timeTitles < 5
+        Call aEvents.appendElement()
+        Let aTtyAttr[aEvents.getLength()] = "blue reverse"
+        Let aEvents[aEvents.getLength()] = %"Coming Next"
+        Let timeTitles = 5
+    End Case
+    Call aEvents.appendElement()
+    Let aEvents[aEvents.getLength()] = dbEvent.eventTitle
+  End Foreach
+  Free cUserEvents
 End Function
 
 -- SQL

@@ -1,5 +1,38 @@
 Layout (Text=%"week calendar",MinWidth=100,MinHeight=30)
-  VBox
+  HBox
     Form "calendar"
+    Table (unhidableColumns, unmovableColumns, unsortableColumns, Style="listonly")
+    {
+    [ev1                  ]
+    [                     ]
+    [                     ]
+    [                     ]
+    [                     ]
+    [                     ]
+    [                     ]
+    [                     ]
+    [                     ]
+    [                     ]
+    [                     ]
+    [                     ]
+    [                     ]
+    [                     ]
+    [                     ]
+    [                     ]
+    [                     ]
+    [                     ]
+    [                     ]
+    [                     ]
+    [                     ]
+    }
+    End
   End
+End
+
+Attributes
+  Edit ev1 = formonly.strEvent, Title=%"Events";
+End
+
+Instructions
+  Screen Record srEvents (formonly.strEvent)
 End

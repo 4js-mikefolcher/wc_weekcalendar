@@ -70,11 +70,13 @@
         <File excludeFromLink="true" filePath="calendar.4gl"/>
         <File filePath="calendar.per"/>
         <File excludeFromLink="true" filePath="event.per"/>
+        <File filePath="options.per"/>
       </VirtualFolder>
     </Library>
     <Application binaryName="weekcalendar" id="843970946" label="weekcalendar">
       <File filePath="agenda.per"/>
       <File filePath="main.4gl"/>
+      <File filePath="wc_weekcalendar.4st"/>
     </Application>
   </Group>
 </Project>

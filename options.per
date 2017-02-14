@@ -1,0 +1,71 @@
+Layout (Text=%"Calendar Default Options")
+  Grid
+  {
+   [lb1][se1]
+   [lb2][ed1]
+   [cx1     ]
+   [lb3][cb1]
+   [lb4][se2]
+   [lb5][cb2]
+   [cx2     ]
+   [cx3     ]
+   [lb6][se3]
+  }
+  End
+End
+
+Attributes
+  Label lb1 : lb1, Text=%"Time slot per hour";
+  SpinEdit se1 = formonly.timeslotsPerHour,
+                 ValueMin=1,
+                 ValueMax=15,
+                 Step=1,
+                 Not Null;
+  Label    lb2 : lb2, Text=%"Time slot heigh";
+  Edit     ed1 = formonly.timeslotHeight,
+                 Not Null;
+  CheckBox cx1 = formonly.use24Hour,
+                 Text=%"24 Hour format",
+                 ValueChecked=True,
+                 ValueUnchecked=False,
+                 Not Null;
+  Label    lb3 : lb3, Text=%"First day of week";
+  Combobox cb1 = formonly.firstDayOfWeek,
+                 Items=((0,%"Sunday"),
+                        (1,%"Monday"),
+                        (2,%"Tuesday"),
+                        (3,%"Wednesday"),
+                        (4,%"Thursday"),
+                        (5,%"Friday"),
+                        (6,%"Saturday")),
+                 Not Null;
+  Label    lb4 : lb4, Text=%"Number of days to show";
+  SpinEdit se2 = formonly.daysToShow,
+                 ValueMin = 1,
+                 ValueMax = 15,
+                 Step = 1,
+                 Not Null;
+  Label    lb5 : lb5, Text=%"Date format";
+  Combobox cb2 = formonly.dateFormat,
+                 Items=(('M d, Y',%"Month day, Year"),
+                        ('d m Y',%"day month Year"),
+                        ('D M Y',%"Day Month Year"),
+                        ('d m y',%"day month year"),
+                        ('W d m Y',%"Week day/month/Year"));
+  Checkbox cx2 = formonly.alwaysDisplayTimeMinutes,
+                 Text=%"Always show minutes",
+                 ValueChecked=True,
+                 ValueUnchecked=False,
+                 Not Null;
+  Checkbox cx3 = formonly.useShortDayNames,
+                 Text=%"Short Day names",
+                 ValueChecked=True,
+                 ValueUnchecked=False,
+                 Not Null;
+  Label    lb6 : lb6, Text=%"Default event length";
+  Spinedit se3 = formonly.defaultEventLength,
+                 ValueMin = 1,
+                 ValueMax = 6,
+                 Step = 1,
+                 Not Null;
+End

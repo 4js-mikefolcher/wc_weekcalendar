@@ -2,6 +2,8 @@
 
 Import util
 
+Constant myDebug = False
+
 -- That will be translated to a JSON array.
 -- Has to be written in lower case or at least first character 
 -- in lower case to match JavaScript JSON specification
@@ -21,12 +23,21 @@ Public Type
     lastname      String                    -- lastName
                 End Record
 Private Type
-  tOptions         Record
-    firstDayOfWeek   SmallInt
-                   End Record
+  tOptions                   Record
+    timeslotsPerHour           SmallInt,
+    timeslotHeight             SmallInt,
+    use24Hour                  Boolean,
+    firstDayOfWeek             SmallInt,
+    daysToShow                 SmallInt,
+    dateFormat                 String,
+    alwaysDisplayTimeMinutes   Boolean,
+    useShortDayNames           Boolean,
+    defaultEventLength         SmallInt
+                             End Record
 
 Private Define
   myCalendar   Dynamic Array Of tEvent,
+  myCalOptions tOptions,
   myUsers      Dynamic Array Of tUser,
   dayStartHour DateTime Hour To Second,
   dayEndHour   DateTime Hour To Second
@@ -39,10 +50,28 @@ Public Function init()
   Define
     strDt String
 
+  -- Default values as written in wcweekcalendar.js file
+  Let myCalOptions.timeslotsPerHour         = 4
+  Let myCalOptions.timeslotHeight           = 20
+  Let myCalOptions.use24Hour                = false
+  Let myCalOptions.firstDayOfWeek           = 1
+  Let myCalOptions.daysToShow               = 7
+  Let myCalOptions.dateFormat               = 'M d, Y'
+  Let myCalOptions.alwaysDisplayTimeMinutes = True
+  Let myCalOptions.useShortDayNames         = False
+  Let myCalOptions.defaultEventLength       = 2
+
   Call ui.Interface.frontCall("webcomponent","call",["formonly.calendarpipe","getStartHour",""],[strDt])
   Let dayStartHour = StrDt||":00:00"
   Call ui.Interface.frontCall("webcomponent","call",["formonly.calendarpipe","getEndHour",""],[strDt])
   Let dayEndHour = strDt||":00:00"
+End Function
+
+Public Function redraw( nbDays )
+  Define
+    nbDays SmallInt
+
+  Call ui.Interface.frontCall("webcomponent","call",["formonly.calendarpipe","redraw",nbDays],[])
 End Function
 
 -- User Management
@@ -59,6 +88,19 @@ End Function
 
 Public Function ClearUsers()
   Call MyUsers.clear()
+End Function
+
+Public Function getUserIdByPosition( pos )
+  Define
+    pos    Integer,
+    userId Integer
+
+  Let userId = Null
+  If pos > 0 And pos < myUsers.getLength() Then
+    Let userId = myUsers[pos].userid
+  End If
+
+  Return userId
 End Function
 
 -- Event Management
@@ -169,9 +211,42 @@ Public Dialog dlgCalendar()
     On Action refresh
       Let calendarPipe = sendEventsToWebComponent()
 
-    On Action showDesc
-      Call parseJsonEvent(calendarPipe) Returning wcEvent.*
-      Let currentEventRowNo = displayEventDetails(searchEventById(wcEvent.id))
+    On Action caloptions
+      Call setCalendarOptions()
+      Let calendarPipe = sendEventsToWebComponent()
+
+    On Action oneday
+      Let myCalOptions.daysToShow = 1
+      Call redraw(1)
+      Let calendarPipe = sendEventsToWebComponent()
+
+    On Action threedays
+      Let myCalOptions.daysToShow = 3
+      Call redraw(3)
+      Let calendarPipe = sendEventsToWebComponent()
+
+    On Action fivedays
+      Let myCalOptions.daysToShow = 5
+      Call redraw(5)
+      Let calendarPipe = sendEventsToWebComponent()
+
+    On Action sevendays
+      Let myCalOptions.daysToShow = 7
+      Call redraw(7)
+      Let calendarPipe = sendEventsToWebComponent()
+
+    On Action nowadays
+      Call launchFunction( "today" )
+      Let calendarPipe = sendEventsToWebComponent()
+
+    On Action previous
+      Call launchFunction( "prev" )
+      Let calendarPipe = sendEventsToWebComponent()
+
+    On Action next
+      Call launchFunction( "next" )
+      Let calendarPipe = sendEventsToWebComponent()
+
   End Input
 End Dialog
 
@@ -348,6 +423,26 @@ End Function
 
 -- Private functions
 --
+Public Function launchFunction( fct )
+  Define
+    fct String
+
+  Call ui.Interface.frontCall("webcomponent","call",["formonly.calendarpipe","launchFunction",fct],[])
+End Function
+
+Private Function setCalendarOptions()
+  Open Window wCalOptions With Form "options"
+
+    Let Int_Flag = False
+    Input By Name myCalOptions.* Attributes (Unbuffered, Without Defaults)
+
+  Close Window wCalOptions
+  If Not Int_Flag Then
+    Let calendarPipe = sendEventsToWebComponent()
+    Call launchFunction("today")
+  End If
+End Function
+
 Private Function getFirstLinkEvent(eventId)
   Define
     eventId Integer,
@@ -391,16 +486,18 @@ End Function
 Private Function sendEventsToWebComponent()
   Define
     jsonEvents    util.JSONArray,
+    jsonOptions   util.JSONObject,
     strJsonEvents String
 
+  Let jsonOptions   = util.JSONObject.fromFGL(myCalOptions)
   If myCalendar.getLength() > 0 Then
-    Let jsonEvents = util.JSONArray.fromFGL(Mycalendar)
-    Let strJsonEvents = '{"out":',jsonEvents.toString(),'}'
+    Let jsonEvents    = util.JSONArray.fromFGL(myCalendar)
+    Let strJsonEvents = '{"options":',jsonOptions.toString(),',"events":',jsonEvents.toString(),'}'
   Else
-    Let strJsonEvents = '{"out":[]}'
+    Let strJsonEvents = '{"options":',jsonOptions.toString(),',"events":[]}'
   End If
 
---  Display StrJsonEvents
+  If myDebug Then Display StrJsonEvents End If
   Return  strJsonEvents
 End Function
 
