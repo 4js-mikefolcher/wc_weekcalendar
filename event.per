@@ -1,14 +1,18 @@
 Layout (Text=%"Event")
   Grid
   {
-  [lb0][use                      ]
-  [lb1][dts       : :lb2:hrs     ]
-  [lb3][dte       : :lb4:hre     ]
-       [dfu                      ]
-  [lb5][edt                      ]
-  [lb6][ede                      ]
-       [                         ]
-       [                         ]
+  [lb0][use                         ]
+  [lb1][dts       :    :lb2:hrs     ]
+  [lb3][dte       :    :lb4:hre     ]
+       [dfu                         ]
+  [lb7][rec                         ]
+  [lb8][rep       :                 ]
+  [l10][l11][l12][l13][l14][l15][l16]
+  [c1 ][c2 ][c3 ][c4 ][c5 ][c6 ][c7 ]
+  [lb5][edt                         ]
+  [lb6][ede                         ]
+       [                            ]
+       [                            ]
   }
   End
 End
@@ -19,6 +23,15 @@ Attributes
   Label lb2 : lb2, Text=%"Hour";
   Label lb3 : lb3, Text=%"Ends";
   Label lb4 : lb4, Text=%"Hour";
+  Label lb7 : lb7, Text=%"Recurrence";
+  Label lb8 : lb8, Text=%"Repeat till",Hidden;
+  Label l10 : l10, Text=%"Monday", Hidden;
+  Label l11 : l11, Text=%"Tuesday", Hidden;
+  Label l12 : l12, Text=%"Wednesday", Hidden;
+  Label l13 : l13, Text=%"Thursday", Hidden;
+  Label l14 : l14, Text=%"Friday", Hidden;
+  Label l15 : l15, Text=%"Saturday", Hidden;
+  Label l16 : l16, Text=%"Sunday", Hidden;
   Label lb5 : lb5, Text=%"Title";
   Label lb6 : lb6, Text=%"Description";
 
@@ -29,6 +42,15 @@ Attributes
   DateEdit     dte   = formonly.DateEnd;
   TimeEdit     hre   = formonly.HourEnd;
   CheckBox     dfu   = formonly.FullDayLong, Text=%"All day long", Not Null, Default=False, ValueChecked=True, ValueUnchecked=False;
+  Combobox     rec   = formonly.recurrence, Initializer=cbrecurrence, Not Null;
+  DateEdit     rep   = formonly.repeatTill,Not Null,Hidden;
+  CheckBox     c1    = formonly.repmonday, ValueChecked=True,ValueUnchecked=False, Not Null, Text="", Hidden;
+  CheckBox     c2    = formonly.reptuesday, ValueChecked=True,ValueUnchecked=False, Not Null, Text="", Hidden;
+  CheckBox     c3    = formonly.repwednesday, ValueChecked=True,ValueUnchecked=False, Not Null, Text="", Hidden;
+  CheckBox     c4    = formonly.repthursday, ValueChecked=True,ValueUnchecked=False, Not Null, Text="", Hidden;
+  CheckBox     c5    = formonly.repfriday, ValueChecked=True,ValueUnchecked=False, Not Null, Text="", Hidden;
+  CheckBox     c6    = formonly.repsaturday, ValueChecked=True,ValueUnchecked=False, Not Null, Text="", Hidden;
+  CheckBox     c7    = formonly.repsunday, ValueChecked=True,ValueUnchecked=False, Not Null, Text="", Hidden;
   Edit         edt   = formonly.Title;
   TextEdit     ede   = formonly.EventDesc, Stretch=Both;
 End

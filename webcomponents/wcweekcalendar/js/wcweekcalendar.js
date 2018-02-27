@@ -28,7 +28,7 @@ onICHostReady = function(version) {
     }
 
     if(eventObj) {
-      myEventList.events.splice(0,myEventList.length);
+      myEventList.events.splice(0,myEventList.events.length);
       for (var i = 0; i < eventObj.length; i++) {
         $("#calendar").weekCalendar("updateEvent",eventObj[i]);
         myEventList.events.push(eventObj[i]);
@@ -117,30 +117,30 @@ $(document).ready(function() {
     // Callback when new Event
     eventNew: function(calEvent) {
       gICAPI.SetFocus();
-      gICAPI.SetData('{"id":"' + calEvent.id + '","userId":"' + calEvent.userId + '","start":"' + formatFglDateTime(calEvent.start) + '", "end":"' + formatFglDateTime(calEvent.end) + '", "title": "' + calEvent.title +'", "eventdesc": "'+ calEvent.eventdesc +'", "eventparent":"'+calEvent.eventparent+'"}');
+      gICAPI.SetData('{"id": "' + calEvent.id + '","userId": "' + calEvent.userId + '","start": "' + formatFglDateTime(calEvent.start) + '", "end": "' + formatFglDateTime(calEvent.end) + '", "recurrence": "' + calEvent.recurrence +'","repeattill": "' + calEvent.repeattill +'","repmonday": "' + calEvent.repmonday +'","reptuesday": "' + calEvent.reptuesday +'","repwednesday": "' + calEvent.repwednesday +'","repthursday": "' + calEvent.repthursday +'","repfriday": "' + calEvent.repfriday +'","repsaturday": "' + calEvent.repsaturday +'","repsunday": "' + calEvent.repsunday +'","title": "' + calEvent.title +'", "eventdesc": "'+ calEvent.eventdesc +'", "eventparent":"'+calEvent.eventparent+'"}');
       gICAPI.Action('new');
     },
     // Callback when update Event duration
     eventResize: function(calEvent) {
       gICAPI.SetFocus();
-      gICAPI.SetData('{"id":"' + calEvent.id + '","userId":"' + calEvent.userId + '","start":"' + formatFglDateTime(calEvent.start) + '", "end":"' + formatFglDateTime(calEvent.end) + '", "title": "' + calEvent.title +'", "eventdesc": "'+ calEvent.eventdesc +'", "eventparent":"'+calEvent.eventparent+'"}');
+      gICAPI.SetData('{"id": "' + calEvent.id + '","userId": "' + calEvent.userId + '","start": "' + formatFglDateTime(calEvent.start) + '", "end": "' + formatFglDateTime(calEvent.end) + '", "recurrence": "' + calEvent.recurrence +'","repeattill": "' + calEvent.repeattill +'","repmonday": "' + calEvent.repmonday +'","reptuesday": "' + calEvent.reptuesday +'","repwednesday": "' + calEvent.repwednesday +'","repthursday": "' + calEvent.repthursday +'","repfriday": "' + calEvent.repfriday +'","repsaturday": "' + calEvent.repsaturday +'","repsunday": "' + calEvent.repsunday +'","title": "' + calEvent.title +'", "eventdesc": "'+ calEvent.eventdesc +'", "eventparent":"'+calEvent.eventparent+'"}');
       gICAPI.Action('move');
     },
     // Callback when moved Event
     eventDrop: function(calEvent) {
       gICAPI.SetFocus();
-      gICAPI.SetData('{"id":"' + calEvent.id + '","userId":"' + calEvent.userId + '","start":"' + formatFglDateTime(calEvent.start) + '", "end":"' + formatFglDateTime(calEvent.end) + '", "title": "' + calEvent.title +'", "eventdesc": "'+ calEvent.eventdesc +'", "eventparent":"'+calEvent.eventparent+'"}');
+      gICAPI.SetData('{"id": "' + calEvent.id + '","userId": "' + calEvent.userId + '","start": "' + formatFglDateTime(calEvent.start) + '", "end": "' + formatFglDateTime(calEvent.end) + '", "recurrence": "' + calEvent.recurrence +'","repeattill": "' + calEvent.repeattill +'","repmonday": "' + calEvent.repmonday +'","reptuesday": "' + calEvent.reptuesday +'","repwednesday": "' + calEvent.repwednesday +'","repthursday": "' + calEvent.repthursday +'","repfriday": "' + calEvent.repfriday +'","repsaturday": "' + calEvent.repsaturday +'","repsunday": "' + calEvent.repsunday +'","title": "' + calEvent.title +'", "eventdesc": "'+ calEvent.eventdesc +'", "eventparent":"'+calEvent.eventparent+'"}');
       gICAPI.Action('move');
     },
     eventClick: function(calEvent, $event) {
       gICAPI.SetFocus();
-      gICAPI.SetData('{"id":"' + calEvent.id + '","userId":"' + calEvent.userId + '","start":"' + formatFglDateTime(calEvent.start) + '", "end":"' + formatFglDateTime(calEvent.end) + '", "title": "' + calEvent.title +'", "eventdesc": "'+ calEvent.eventdesc +'", "eventparent":"'+calEvent.eventparent+'"}');
+      gICAPI.SetData('{"id": "' + calEvent.id + '","userId": "' + calEvent.userId + '","start": "' + formatFglDateTime(calEvent.start) + '", "end": "' + formatFglDateTime(calEvent.end) + '", "recurrence": "' + calEvent.recurrence +'","repeattill": "' + calEvent.repeattill +'","repmonday": "' + calEvent.repmonday +'","reptuesday": "' + calEvent.reptuesday +'","repwednesday": "' + calEvent.repwednesday +'","repthursday": "' + calEvent.repthursday +'","repfriday": "' + calEvent.repfriday +'","repsaturday": "' + calEvent.repsaturday +'","repsunday": "' + calEvent.repsunday +'","title": "' + calEvent.title +'", "eventdesc": "'+ calEvent.eventdesc +'", "eventparent":"'+calEvent.eventparent+'"}');
       gICAPI.Action('update');
     },
     eventMouseover: function(calEvent, $event) {
       displayMessage('<strong>calEvent.title</strong><br/>Start: ' + calEvent.start + '<br/>End: ' + calEvent.end);
       gICAPI.SetFocus();
-      gICAPI.SetData('{"id":"' + calEvent.id + '","userId":"' + calEvent.userId + '","start":"' + formatFglDateTime(calEvent.start) + '", "end":"' + formatFglDateTime(calEvent.end) + '", "title": "' + calEvent.title +'", "eventdesc": "'+ calEvent.eventdesc +'", "eventparent":"'+calEvent.eventparent+'"}');
+      gICAPI.SetData('{"id": "' + calEvent.id + '","userId": "' + calEvent.userId + '","start": "' + formatFglDateTime(calEvent.start) + '", "end": "' + formatFglDateTime(calEvent.end) + '", "recurrence": "' + calEvent.recurrence +'","repeattill": "' + calEvent.repeattill +'","repmonday": "' + calEvent.repmonday +'","reptuesday": "' + calEvent.reptuesday +'","repwednesday": "' + calEvent.repwednesday +'","repthursday": "' + calEvent.repthursday +'","repfriday": "' + calEvent.repfriday +'","repsaturday": "' + calEvent.repsaturday +'","repsunday": "' + calEvent.repsunday +'","title": "' + calEvent.title +'", "eventdesc": "'+ calEvent.eventdesc +'", "eventparent":"'+calEvent.eventparent+'"}');
       gICAPI.Action('showdesc');
     }
 

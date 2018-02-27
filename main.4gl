@@ -10,6 +10,15 @@ Type
     hourStart     DateTime Hour To Second,
     dateEnd       Date,
     hourEnd       DateTime Hour To Second,
+    recurrence    smallInt,
+    repeattill    Date,
+    repmonday     Boolean,
+    reptuesday    Boolean,
+    repwednesday  Boolean,
+    repthursday   Boolean,
+    repfriday     Boolean,
+    repsaturday   Boolean,
+    repsunday     Boolean,
     eventTitle    Char(50),
     eventDesc     Char(200),
     eventParent   Integer
@@ -19,7 +28,10 @@ Main
   Define
     dateStart  Date,
     dateEnd    Date,
+    hourStart  DateTime Hour To Second,
     hourEnd    DateTime Hour To Second,
+    bkpstart   DateTime Year To Second,
+    bkpend     DateTime Year To Second,
     wEvent     calendar.tEvent,
     retCod     Integer,
     aEvents    Dynamic Array Of String,
@@ -39,6 +51,7 @@ Main
     Call initUsers()
     Call initEvents()
 
+--    Call calendar.turnDebugOn(True) --needs to be called after calendar.init()
     Dialog Attributes (Unbuffered)
       SubDialog calendar.dlgCalendar
       Display Array aEvents To srEvents.*
@@ -67,29 +80,54 @@ Main
         If retCod Then
           Let wEvent.id = getNewEvenId()
           Let dateStart = wEvent.start
+          Let hourStart = wEvent.start
+          Let hourEnd   = wEvent.end
           Let dateEnd   = wEvent.end
-          If dateEnd > dateStart Then
-            Let wEvent.eventParent = wEvent.id
-            Let hourEnd = wEvent.end
-            Let wEvent.end = calendar.formatWcDateHour(DateStart,HourEnd)
-          Else
-            Let wEvent.eventParent = 0
-          End If
-          For retCod=0 To dateEnd-dateStart
-            If insertDbEvent(wEvent.*) Then
-              Let calendar.currentEventRowNo = calendar.addEvent(wEvent.id,
-                                 wEvent.userId,
-                                 wEvent.start,
-                                 wEvent.end,
-                                 wEvent.title,
-                                 wEvent.eventDesc,
-                                 wEvent.eventParent)
-            End If
-            Let wEvent.eventParent = wEvent.id
-            Let wEvent.id = getNewEvenId()
-            Let wEvent.start = wEvent.start + Interval( 1 ) Day To Day
-            Let wEvent.end = wEvent.end + Interval( 1 ) Day To Day
-          End For
+          Case wEvent.recurrence
+            When calendar.recurrenceNone
+              Let wEvent.eventParent = 0
+              If dateEnd > dateStart Then
+                Let wEvent.eventParent = wEvent.id
+              End If
+              Call addSimpleEvent(wEvent.*,wEvent.start,wEvent.end,hourEnd,hourStart) Returning wEvent.*
+            When calendar.recurrenceDay
+              Let wEvent.end = calendar.formatWcDateHour(DateStart,HourEnd)
+              Let wEvent.eventParent = wEvent.id
+              Call addSimpleEvent(wEvent.*,wEvent.start,wEvent.repeattill,hourEnd,hourStart) Returning wEvent.*
+            When calendar.recurrenceWeek
+              Let wEvent.eventParent = wEvent.id
+              While dateStart <= wEvent.repeattill
+                Let bkpstart = wEvent.start
+                Let bkpend   = wEvent.end
+                Let dateEnd   = wEvent.end
+                Call addSimpleEvent(wEvent.*,wEvent.start,wEvent.start+( Interval ( 1 ) Day To Day * 6 ),hourEnd,hourStart) Returning wEvent.*
+                Let wEvent.start = bkpstart + ( Interval ( 1 ) Day To Day * 7 )
+                Let wEvent.end   = bkpend   + ( Interval ( 1 ) Day To Day * 7 )
+                Let dateStart = wEvent.start
+              End While
+            When calendar.recurrenceMonth
+              Let wEvent.eventParent = wEvent.id
+              While dateStart <= wEvent.repeattill
+                Let bkpstart = wEvent.start
+                Let bkpend   = wEvent.end
+                Let dateEnd   = wEvent.end
+                Call addSimpleEvent(wEvent.*,wEvent.start,wEvent.start+( Interval ( 1 ) Day To Day * 6 ),hourEnd,hourStart) Returning wEvent.*
+                Let wEvent.start = bkpstart + ( Interval ( 1 ) Month To Month )
+                Let wEvent.end   = bkpend   + ( Interval ( 1 ) Month To Month )
+                Let dateStart = wEvent.start
+              End While
+            When calendar.recurrenceYear
+              Let wEvent.eventParent = wEvent.id
+              While dateStart <= wEvent.repeattill
+                Let bkpstart = wEvent.start
+                Let bkpend   = wEvent.end
+                Let dateEnd   = wEvent.end
+                Call addSimpleEvent(wEvent.*,wEvent.start,wEvent.start+( Interval ( 1 ) Day To Day * 6 ),hourEnd,hourStart) Returning wEvent.*
+                Let wEvent.start = bkpstart + ( Interval ( 1 ) Year To Year )
+                Let wEvent.end   = bkpend   + ( Interval ( 1 ) Year To Year )
+                Let dateStart = wEvent.start
+              End While
+          End Case
         End If
         Call calendar.refreshEvents()
         Call getEventList(aEvents,aTtyAttr,wEvent.userId)
@@ -159,6 +197,78 @@ Main
   Close Window wAgenda
 End Main
 
+Function addSimpleEvent( wEvent calendar.tEvent, dateStart Date, dateTill Date, hourEnd DateTime Hour To Second, hourStart DateTime Hour To Second )
+  Define
+    doIt Boolean,
+    dts  Date,
+    dte  Date
+
+  Let dts = wEvent.start
+  Let dte = wEvent.end
+  If dte > dts Then
+    Let wEvent.end = calendar.formatWcDateHour(wEvent.start,calendar.getEndDayHour())
+  End If
+  While dateStart <= dateTill
+    If wEvent.recurrence = calendar.recurrenceNone Then
+      Let doIt = True
+    Else
+      Case 
+        When wEvent.repsunday    And WeekDay(wEvent.start) = 0
+          Let doIt = True
+        When wEvent.repmonday    And WeekDay(wEvent.start) = 1
+          Let doIt = True
+        When wEvent.reptuesday   And WeekDay(wEvent.start) = 2
+          Let doIt = True
+        When wEvent.repwednesday And WeekDay(wEvent.start) = 3
+          Let doIt = True
+        When wEvent.repthursday  And WeekDay(wEvent.start) = 4
+          Let doIt = True
+        When wEvent.repfriday    And WeekDay(wEvent.start) = 5
+          Let doIt = True
+        When wEvent.repsaturday  And WeekDay(wEvent.start) = 6
+          Let doIt = True
+        When dte > dts And dateStart <= dte
+          Let doIt = True
+        Otherwise
+          Let doIt = False
+      End Case
+    End If
+    If doIt Then
+      If insertDbEvent(wEvent.*) Then
+        Let calendar.currentEventRowNo = calendar.addEvent(wEvent.id,
+                                   wEvent.userId,
+                                   wEvent.start,
+                                   wEvent.end,
+                                   wEvent.recurrence,
+                                   wEvent.repeattill,
+                                   wEvent.repmonday,
+                                   wEvent.reptuesday,
+                                   wEvent.repwednesday,
+                                   wEvent.repthursday,
+                                   wEvent.repfriday,
+                                   wEvent.repsaturday,
+                                   wEvent.repsunday,
+                                   wEvent.title,
+                                   wEvent.eventDesc,
+                                   wEvent.eventParent)
+      End If
+      Let wEvent.eventParent = wEvent.id
+      Let wEvent.id = getNewEvenId()
+    End If
+    Let wEvent.start = wEvent.start + Interval ( 1 ) Day To Day
+    Let wEvent.end   = wEvent.end   + Interval ( 1 ) Day To Day
+    Let dateStart = wEvent.start
+    If dte > dts Then
+      Let wEvent.start = calendar.formatWcDateHour(wEvent.start,calendar.getStartDayHour())
+    End If
+    If dateStart = dte Then
+      Let wEvent.end = calendar.formatWcDateHour(dateStart,hourEnd)
+    End If
+  End While
+
+  Return wEvent.*
+End Function
+
 -- Select start date, end date and first chaine id of an event
 Function getRecurrentEventData(wEvent)
   Define
@@ -186,63 +296,79 @@ Function getRecurrentEventData(wEvent)
 End Function
 
 -- Manages event modification in DB and WC and cares about recurrence
-Function modifyEvent( wEvent )
+Function modifyEvent( wEvent calendar.tEvent )
   Define
-    wEvent     calendar.tEvent,
     dateStart  Date,
     dateEnd    Date,
+    hourStart  DateTime Hour To Second,
     hourEnd    DateTime Hour To Second,
-    dbEvent    tDbEvent,
-    retCod     Integer
+    bkpstart   DateTime Year To Second,
+    bkpend     DateTime Year To Second,
+    retCod     Integer,
+    eId        Integer
 
-  Let dateStart = wEvent.start
-  Let dateEnd   = wEvent.end
-  If dateEnd > dateStart Then
-    Let wEvent.eventParent = wEvent.id
-    Let hourEnd = wEvent.end
-    Let wEvent.end = calendar.formatWcDateHour(dateStart,hourEnd)
-  Else
-    Let wEvent.eventParent = 0
+  -- Remove chaine
+  If wEvent.id Is Not Null Then
+    Let eId = getEventFirstLink( wEvent.Id )
+    While True
+      Let retCod = removeEvent( eId )
+      Let eId = getEventNextLink( eId )
+      If eId = 0 Then
+        Exit While
+      End If
+    End While
   End If
-  -- Update existing chaine
-  While dateEnd >= dateStart
-    Let hourEnd = wEvent.end
-    Let wEvent.end = calendar.formatWcDateHour(dateStart,hourEnd)
-    Let retCod = updateEvent( wEvent.* )
-    Let wEvent.eventParent = wEvent.id
-    Let wEvent.start = wEvent.start + Interval( 1 ) Day To Day
-    Let wEvent.end = wEvent.end + Interval( 1 ) Day To Day
-    Let wEvent.id = getEventNextLink( wEvent.id )
-    Let dateStart = wEvent.start
-    If wEvent.id = 0 Then
-      Exit While
-    End If
-  End While
-  -- Create new link if needed
-  While dateEnd >= dateStart
-    Let wEvent.id = getNewEvenId()
-    If insertDbEvent(wEvent.*) Then
-      Let calendar.currentEventRowNo = calendar.addEvent(wEvent.id,
-                               wEvent.userId,
-                               wEvent.start,
-                               wEvent.end,
-                               wEvent.title,
-                               wEvent.eventDesc,
-                               wEvent.eventParent)
-    End If
-    Let wEvent.eventParent = wEvent.id
-    Let wEvent.start = wEvent.start + Interval( 1 ) Day To Day
-    Let wEvent.end = wEvent.end + Interval( 1 ) Day To Day
-    Let dateStart = wEvent.start
-    If dateEnd < dateStart Then
-      Let wEvent.id = 0
-    End If
-  End While
-  -- Trim right chaine
-  While wEvent.id <> 0
-    Let retCod = removeEvent( wEvent.id )
-    Let wEvent.id = getEventNextLink( wEvent.Id )
-  End While
+
+  -- build chaine in new
+  Let dateStart = wEvent.start
+  Let hourStart = wEvent.start
+  Let hourEnd   = wEvent.end
+  Let dateEnd   = wEvent.end
+  Case wEvent.recurrence
+    When calendar.recurrenceNone
+      Let wEvent.eventParent = 0
+      If dateEnd > dateStart Then
+        Let wEvent.eventParent = wEvent.id
+      End If
+      Call addSimpleEvent(wEvent.*,wEvent.start,wEvent.end,hourEnd,hourStart) Returning wEvent.*
+    When calendar.recurrenceDay
+      Let wEvent.end = calendar.formatWcDateHour(DateStart,HourEnd)
+      Let wEvent.eventParent = wEvent.id
+      Call addSimpleEvent(wEvent.*,wEvent.start,wEvent.repeattill,hourEnd,hourStart) Returning wEvent.*
+    When calendar.recurrenceWeek
+      Let wEvent.eventParent = wEvent.id
+      While dateStart <= wEvent.repeattill
+        Let bkpstart = wEvent.start
+        Let bkpend   = wEvent.end
+        Let dateEnd   = wEvent.end
+        Call addSimpleEvent(wEvent.*,wEvent.start,wEvent.start+( Interval ( 1 ) Day To Day * 6 ),hourEnd,hourStart) Returning wEvent.*
+        Let wEvent.start = bkpstart + ( Interval ( 1 ) Day To Day * 7 )
+        Let wEvent.end   = bkpend   + ( Interval ( 1 ) Day To Day * 7 )
+        Let dateStart = wEvent.start
+      End While
+    When calendar.recurrenceMonth
+      Let wEvent.eventParent = wEvent.id
+      While dateStart <= wEvent.repeattill
+        Let bkpstart = wEvent.start
+        Let bkpend   = wEvent.end
+        Let dateEnd   = wEvent.end
+        Call addSimpleEvent(wEvent.*,wEvent.start,wEvent.start+( Interval ( 1 ) Day To Day * 6 ),hourEnd,hourStart) Returning wEvent.*
+        Let wEvent.start = bkpstart + ( Interval ( 1 ) Month To Month )
+        Let wEvent.end   = bkpend   + ( Interval ( 1 ) Month To Month )
+        Let dateStart = wEvent.start
+      End While
+    When calendar.recurrenceYear
+      Let wEvent.eventParent = wEvent.id
+      While dateStart <= wEvent.repeattill
+        Let bkpstart = wEvent.start
+        Let bkpend   = wEvent.end
+        Let dateEnd   = wEvent.end
+        Call addSimpleEvent(wEvent.*,wEvent.start,wEvent.start+( Interval ( 1 ) Day To Day * 6 ),hourEnd,hourStart) Returning wEvent.*
+        Let wEvent.start = bkpstart + ( Interval ( 1 ) Year To Year )
+        Let wEvent.end   = bkpend   + ( Interval ( 1 ) Year To Year )
+        Let dateStart = wEvent.start
+      End While
+  End Case
 End Function
 
 -- Does the modification of a given event
@@ -259,14 +385,7 @@ Function updateEvent( wEvent )
   Let wEvent.end = calendar.formatWcDateHour(dateStart,hourEnd)
   If updateDbEvent(wEvent.*) Then
     Let pos = calendar.getEventIndexById( wEvent.id )
-    Call calendar.updateWcEvent( pos,
-                     wEvent.id,
-                     wEvent.userId,
-                     wEvent.start,
-                     wEvent.end,
-                     wEvent.title,
-                     wEvent.eventDesc,
-                     wEvent.eventParent)
+    Call calendar.updateWcEvent( pos, wEvent.* )
     Let pos = True
   End If
 
@@ -302,7 +421,15 @@ Function formatToDbEvent( wcEvent )
   Let dbEvent.hourStart   = wcEvent.start
   Let dbEvent.dateEnd     = wcEvent.end
   Let dbEvent.hourEnd     = wcEvent.end
-
+  Let dbEvent.recurrence  = wcEvent.recurrence
+  Let dbEvent.repeattill  = wcEvent.repeattill
+  Let dbEvent.repmonday   = wcEvent.repmonday
+  Let dbEvent.reptuesday  = wcEvent.reptuesday
+  Let dbEvent.repwednesday= wcEvent.repwednesday
+  Let dbEvent.repthursday = wcEvent.repthursday
+  Let dbEvent.repfriday   = wcEvent.repfriday
+  Let dbEvent.repsaturday = wcEvent.repsaturday
+  Let dbEvent.repsunday   = wcEvent.repsunday
   Let dbEvent.eventTitle  = wcEvent.title
   Let dbEvent.eventDesc   = wcEvent.eventdesc
   Let dbEvent.eventParent = wcEvent.eventParent
@@ -319,6 +446,15 @@ Function formatToWcEvent( dbEvent )
   Let wcEvent.userId      = dbEvent.userId
   Let wcEvent.start       = formatWcDateHour(dbEvent.dateStart,dbEvent.hourStart)
   Let wcEvent.end         = formatWcDateHour(dbEvent.dateEnd,dbEvent.hourEnd)
+  Let wcEvent.recurrence  = dbEvent.recurrence
+  Let wcEvent.repeattill  = dbEvent.repeattill
+  Let wcEvent.repmonday   = dbEvent.repmonday
+  Let wcEvent.reptuesday  = dbEvent.reptuesday
+  Let wcEvent.repwednesday= dbEvent.repwednesday
+  Let wcEvent.repthursday = dbEvent.repthursday
+  Let wcEvent.repfriday   = dbEvent.repfriday
+  Let wcEvent.repsaturday = dbEvent.repsaturday
+  Let wcEvent.repsunday   = dbEvent.repsunday
   Let wcEvent.title       = dbEvent.eventTitle
   Let wcEvent.eventDesc   = dbEvent.eventDesc
   Let wcEvent.eventParent = dbEvent.eventParent
@@ -371,7 +507,7 @@ Function getEventList(aEvents,aTtyAttr,userId)
 
   Let timeTitles = 0
 
-  Declare cUserEvents Cursor From "Select eventid,userid,datestart,hourstart,dateend,hourend,eventtitle,eventdesc,eventparent From events Where userid = ? Order By datestart,hourstart"
+  Declare cUserEvents Cursor From "Select * From events Where userid = ? Order By datestart,hourstart"
   Foreach cUserEvents Using userId Into dbEvent.*
     Case
       When dbEvent.dateStart < Today-1 And timeTitles < 1
@@ -428,15 +564,25 @@ Function initEvents()
     pos     Integer
 
   Call calendar.clearEvents()
-  Declare cEvents Cursor From "Select eventid,userid,datestart,hourstart,dateend,hourend,eventtitle,eventdesc,eventparent From events Order By eventid"
+  Declare cEvents Cursor From "Select * From events Order By eventid"
   Foreach cEvents Into dbEvent.*
     Let pos = calendar.addEvent(dbEvent.eventId,
-                              dbEvent.userId,
-                              calendar.formatWcDateHour(dbEvent.dateStart,dbEvent.hourStart),
-                              calendar.formatWcDateHour(dbEvent.dateEnd,dbEvent.hourEnd),
-                              dbEvent.eventTitle,
-                              dbEvent.eventDesc,
-                              dbEvent.eventParent)
+                                dbEvent.userId,
+                                calendar.formatWcDateHour(dbEvent.dateStart,dbEvent.hourStart),
+                                calendar.formatWcDateHour(dbEvent.dateEnd,dbEvent.hourEnd),
+                                dbEvent.recurrence,
+                                dbEvent.repeattill,
+                                dbEvent.repmonday,
+                                dbEvent.reptuesday,
+                                dbEvent.repwednesday,
+                                dbEvent.repthursday,
+                                dbEvent.repfriday,
+                                dbEvent.repsaturday,
+                                dbEvent.repsunday,
+                                dbEvent.eventTitle,
+                                dbEvent.eventDesc,
+                                dbEvent.eventParent
+                               )
   End Foreach
 End Function
 
@@ -458,26 +604,7 @@ Function insertDbEvent( wcEvent )
 
   Let retCod = True
   Try
-    Insert Into events
-      (eventId,
-       userId,
-       dateStart,
-       hourStart,
-       dateEnd,
-       hourEnd,
-       eventTitle,
-       eventDesc,
-       eventParent
-      ) Values (
-       dbEvent.eventId,
-       dbEvent.userId,
-       dbEvent.dateStart,
-       dbEvent.hourStart,
-       dbEvent.dateEnd,
-       dbEvent.hourEnd,
-       dbEvent.eventTitle,
-       dbEvent.eventDesc,
-       dbEvent.eventParent)
+    Insert Into events Values (dbEvent.*)
   Catch
     Display "SQL Insert Error: ",Sqlca.sqlcode," ",SqlErrMessage
     Let retCod = False
@@ -502,6 +629,14 @@ Function updateDbEvent( wcEvent )
           hourStart   = dbEvent.hourStart,
           dateEnd     = dbEvent.dateEnd,
           hourEnd     = dbEvent.hourEnd,
+          recurrence  = dbEvent.recurrence,
+          repmonday   = dbEvent.repmonday,
+          reptuesday  = dbEvent.reptuesday,
+          repwednesday= dbEvent.repwednesday,
+          repthursday = dbEvent.repthursday,
+          repfriday   = dbEvent.repfriday,
+          repsaturday = dbEvent.repsaturday,
+          repsunday   = dbEvent.repsunday,
           eventTitle  = dbEvent.eventTitle,
           eventDesc   = dbEvent.eventDesc,
           eventParent = dbEvent.eventParent
@@ -604,7 +739,7 @@ Function selectEvent( id )
     id      Integer,
     dbEvent tDbEvent
 
-  Select eventid,userid,datestart,hourstart,dateend,hourend,eventtitle,eventdesc,eventparent
+  Select *
     Into dbEvent.*
     From events
    Where events.eventid = id
@@ -631,11 +766,20 @@ Function connectDb()
     hourStart    DateTime Hour To Second,
     dateEnd      Date,
     hourEnd      DateTime Hour To Second,
+    recurrence   Smallint,
+    repeattill   Date,
+    repmonday    Boolean,
+    reptuesday   Boolean,
+    repwednesday Boolean,
+    repthursday  Boolean,
+    repfriday    Boolean,
+    repsaturday  Boolean,
+    repsunday    Boolean,
     eventTitle   Char(50),
     eventDesc    Char(200),
     eventParent  Integer
     )
-  Insert Into events Values (1,1,Today,"09:30:00",Today,"10:00:00","Conference Call","FF91 Project",0)
-  Insert Into events Values (2,1,Today,"10:30:00",Today,"11:00:00","Daily Scrum","FF91 Project",0)
-  Insert Into events Values (3,2,Today,"09:45:00",Today,"10:45:00","Web Site Design Plan","Beauty is in the eyes of the beholder",0)
+  Insert Into events Values (1,1,Today,"09:30:00",Today,"10:00:00",0,Null,False,False,False,False,False,False,False,"Conference Call","FF91 Project",0)
+  Insert Into events Values (2,1,Today,"10:30:00",Today,"11:00:00",0,Null,False,False,False,False,False,False,False,"Daily Scrum","FF91 Project",0)
+  Insert Into events Values (3,2,Today,"09:45:00",Today,"10:45:00",0,Null,False,False,False,False,False,False,False,"Web Site Design Plan","Beauty is in the eyes of the beholder",0)
 End Function

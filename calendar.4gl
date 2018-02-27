@@ -2,7 +2,12 @@
 
 Import util
 
-Constant myDebug = False
+Public Constant
+  recurrenceNone         = 0,
+  recurrenceDay          = 1,
+  recurrenceWeek         = 2,
+  recurrenceMonth        = 3,
+  recurrenceYear         = 4
 
 -- That will be translated to a JSON array.
 -- Has to be written in lower case or at least first character 
@@ -13,6 +18,15 @@ Public Type
     userId        Integer,                  -- userId
     start         DateTime Year To Second,  -- start
     end           DateTime Year To Second,  -- end
+    recurrence    SmallInt,
+    repeattill    Date,
+    repmonday     Boolean,
+    reptuesday    Boolean,
+    repwednesday  Boolean,
+    repthursday   Boolean,
+    repfriday     Boolean,
+    repsaturday   Boolean,
+    repsunday     Boolean,
     title         String,                   -- title
     eventdesc     String,
     eventparent   Integer
@@ -44,12 +58,14 @@ Private Define
 
 Public Define
   calendarPipe      String,
-  currentEventRowNo Integer
+  currentEventRowNo Integer,
+  Debug             Boolean
 
 Public Function init()
   Define
     strDt String
 
+  Let Debug = False
   -- Default values as written in wcweekcalendar.js file
   Let myCalOptions.timeslotsPerHour         = 4
   Let myCalOptions.timeslotHeight           = 20
@@ -72,6 +88,10 @@ Public Function redraw( nbDays )
     nbDays SmallInt
 
   Call ui.Interface.frontCall("webcomponent","call",["formonly.calendarpipe","redraw",nbDays],[])
+End Function
+
+Public Function turnDebugOn( toggle Boolean )
+  Let Debug = toggle
 End Function
 
 -- User Management
@@ -105,6 +125,15 @@ End Function
 
 -- Event Management
 --
+
+Public Function getEndDayHour()
+  Return dayEndHour
+End Function
+
+Public Function getStartDayHour()
+  Return dayStartHour
+End Function
+
 Public Function addEvent(wcEvent)
   Define wcEvent tEvent
 
@@ -113,6 +142,15 @@ Public Function addEvent(wcEvent)
   Let myCalendar[myCalendar.getLength()].userId      = wcEvent.userId
   Let myCalendar[myCalendar.getLength()].start       = wcEvent.start
   Let myCalendar[myCalendar.getLength()].end         = wcEvent.end
+  Let myCalendar[myCalendar.getLength()].recurrence  = wcEvent.recurrence
+  Let myCalendar[myCalendar.getLength()].repeattill  = wcEvent.repeattill
+  Let myCalendar[myCalendar.getLength()].repmonday   = wcEvent.repmonday
+  Let myCalendar[myCalendar.getLength()].reptuesday  = wcEvent.reptuesday
+  Let myCalendar[myCalendar.getLength()].repwednesday= wcEvent.repwednesday
+  Let myCalendar[myCalendar.getLength()].repthursday = wcEvent.repthursday
+  Let myCalendar[myCalendar.getLength()].repfriday   = wcEvent.repfriday
+  Let myCalendar[myCalendar.getLength()].repsaturday = wcEvent.repsaturday
+  Let myCalendar[myCalendar.getLength()].repsunday   = wcEvent.repsunday
   Let myCalendar[myCalendar.getLength()].title       = wcEvent.title.trim()
   Let myCalendar[myCalendar.getLength()].eventDesc   = wcEvent.eventDesc.trim()
   Let myCalendar[myCalendar.getLength()].eventParent = wcEvent.eventParent
@@ -130,6 +168,15 @@ Public Function updateWcEvent( pos, wcEvent )
     Let myCalendar[pos].userId      = wcEvent.userId
     Let myCalendar[pos].start       = wcEvent.start
     Let myCalendar[pos].end         = wcEvent.end
+    Let myCalendar[pos].recurrence  = wcEvent.recurrence
+    Let myCalendar[pos].repeattill  = wcEvent.repeattill
+    Let myCalendar[pos].repmonday   = wcEvent.repmonday
+    Let myCalendar[pos].reptuesday  = wcEvent.reptuesday
+    Let myCalendar[pos].repwednesday= wcEvent.repwednesday
+    Let myCalendar[pos].repthursday = wcEvent.repthursday
+    Let myCalendar[pos].repfriday   = wcEvent.repfriday
+    Let myCalendar[pos].repsaturday = wcEvent.repsaturday
+    Let myCalendar[pos].repsunday   = wcEvent.repsunday
     Let myCalendar[pos].title       = wcEvent.title.trim()
     Let myCalendar[pos].eventDesc   = wcEvent.eventDesc.trim()
     Let myCalendar[pos].eventParent = wcEvent.eventParent
@@ -138,6 +185,7 @@ End Function
 
 Public Function refreshEvents()
   Let calendarPipe = sendEventsToWebComponent()
+  If Debug Then Display calendarPipe End If
 End Function
 
 Public Function clearEvents()
@@ -194,15 +242,13 @@ Public Function removeEventByIndex( Pos )
     Let id = myCalendar[Pos].id
     Call ui.Interface.frontCall("webcomponent","call",["formonly.calendarpipe","removeEvent",id],[])
     Call myCalendar.deleteElement( Pos )
+    Let calendarPipe = sendEventsToWebComponent()
     Let ret = True
   End If
   Return ret
 End Function
 
 Public Dialog dlgCalendar()
-  Define
-    wcEvent tEvent
-
   Input By Name calendarPipe Attributes (Without Defaults)
     Before Input
       Call sendUsersToWebComponent()
@@ -250,9 +296,17 @@ Public Dialog dlgCalendar()
   End Input
 End Dialog
 
-Public Function cbCalendarUsers(CbId)
+Public Function cbrecurrence(cbId ui.comboBox)
+  Call cbId.clear()
+  Call cbId.addItem(recurrenceNone,        %"None")
+  Call cbId.addItem(recurrenceDay,         %"Daily")
+  Call cbId.addItem(recurrenceWeek,        %"Weekly")
+  Call cbId.addItem(recurrenceMonth,       %"Monthly")
+  Call cbId.addItem(recurrenceYear,        %"Yearly")
+End Function
+
+Public Function cbCalendarUsers(CbId ui.comboBox)
   Define
-    cbId ui.comboBox,
     i    SmallInt
 
   Call cbId.clear()
@@ -281,10 +335,10 @@ Public Function completeEvent(wcEvent)
     fullDayLong  Boolean,
     rowNo        Integer
 
-  Let dateStart = wcEvent.start
-  Let hourStart = wcEvent.start
-  Let dateEnd   = wcEvent.end
-  Let hourEnd   = wcEvent.end
+  Let dateStart  = wcEvent.start
+  Let hourStart  = wcEvent.start
+  Let dateEnd    = wcEvent.end
+  Let hourEnd    = wcEvent.end
 
   Let rowNo = searchEventById(WcEvent.id)
   If rowNo = 0 Then
@@ -301,6 +355,15 @@ Public Function completeEvent(wcEvent)
                   dateEnd,
                   hourEnd,
                   fullDayLong,
+                  wcEvent.recurrence,
+                  wcEvent.repeatTill,
+                  wcEvent.repmonday,
+                  wcEvent.reptuesday,
+                  wcEvent.repwednesday,
+                  wcEvent.repthursday,
+                  wcEvent.repfriday,
+                  wcEvent.repsaturday,
+                  wcEvent.repsunday,
                   wcEvent.title,
                   wcEvent.eventDesc
       Attributes(Without Defaults, Unbuffered)
@@ -309,10 +372,151 @@ Public Function completeEvent(wcEvent)
         If wcEvent.id Is Null Then
           Let wcEvent.eventdesc = ""
           Let fullDayLong = False
+          Let wcEvent.recurrence  = 0
+          Let wcEvent.repeatTill  = Null
+          Let wcEvent.repmonday   = False
+          Let wcEvent.reptuesday  = False
+          Let wcEvent.repwednesday= False
+          Let wcEvent.repthursday = False
+          Let wcEvent.repfriday   = False
+          Let wcEvent.repsaturday = False
+          Let wcEvent.repsunday   = False
           Let wcEvent.eventParent = 0
         Else
           Let wcEvent.eventdesc = myCalendar[rowNo].eventdesc
           Let wcEvent.eventParent = myCalendar[rowNo].eventParent
+          If wcEvent.recurrence > recurrenceNone Then
+            Call hideObject("field","formonly.repeattill",False)
+            Call hideObject("element","lb8",False)
+            Call hideObject("element","l10",False)
+            Call hideObject("element","l11",False)
+            Call hideObject("element","l12",False)
+            Call hideObject("element","l13",False)
+            Call hideObject("element","l14",False)
+            Call hideObject("element","l15",False)
+            Call hideObject("element","l16",False)
+            Call hideObject("field","formonly.repmonday",False)
+            Call hideObject("field","formonly.reptuesday",False)
+            Call hideObject("field","formonly.repwednesday",False)
+            Call hideObject("field","formonly.repthursday",False)
+            Call hideObject("field","formonly.repfriday",False)
+            Call hideObject("field","formonly.repsaturday",False)
+            Call hideObject("field","formonly.repsunday",False)
+          End If
+        End If
+
+      On Change recurrence
+        If wcEvent.recurrence > recurrenceNone Then
+          Call hideObject("field","formonly.repeattill",False)
+          Call hideObject("element","lb8",False)
+          Call hideObject("element","l10",False)
+          Call hideObject("element","l11",False)
+          Call hideObject("element","l12",False)
+          Call hideObject("element","l13",False)
+          Call hideObject("element","l14",False)
+          Call hideObject("element","l15",False)
+          Call hideObject("element","l16",False)
+          Call hideObject("field","formonly.repmonday",False)
+          Call hideObject("field","formonly.reptuesday",False)
+          Call hideObject("field","formonly.repwednesday",False)
+          Call hideObject("field","formonly.repthursday",False)
+          Call hideObject("field","formonly.repfriday",False)
+          Call hideObject("field","formonly.repsaturday",False)
+          Call hideObject("field","formonly.repsunday",False)
+          If wcEvent.recurrence = recurrenceDay Then
+            Call Dialog.setFieldActive('dateend',False)
+          Else
+            Call Dialog.setFieldActive('dateend',True)
+          End If
+        Else
+          Call Dialog.setFieldActive('dateend',True)
+          Call hideObject("field","formonly.repeattill",True)
+          Call hideObject("field","formonly.spacingout",True)
+          Call hideObject("element","lb8",True)
+          Call hideObject("element","l10",True)
+          Call hideObject("element","l11",True)
+          Call hideObject("element","l12",True)
+          Call hideObject("element","l13",True)
+          Call hideObject("element","l14",True)
+          Call hideObject("element","l15",True)
+          Call hideObject("element","l16",True)
+          Call hideObject("field","formonly.repmonday",True)
+          Call hideObject("field","formonly.reptuesday",True)
+          Call hideObject("field","formonly.repwednesday",True)
+          Call hideObject("field","formonly.repthursday",True)
+          Call hideObject("field","formonly.repfriday",True)
+          Call hideObject("field","formonly.repsaturday",True)
+          Call hideObject("field","formonly.repsunday",True)
+        End If
+        Case
+          When wcEvent.recurrence = recurrenceDay
+            Let dateEnd = dateStart
+            Let wcEvent.repmonday   = True
+            Let wcEvent.reptuesday  = True
+            Let wcEvent.repwednesday= True
+            Let wcEvent.repthursday = True
+            Let wcEvent.repfriday   = True
+            Let wcEvent.repsaturday = True
+            Let wcEvent.repsunday   = True
+          When wcEvent.recurrence > recurrenceDay
+            Let wcEvent.repmonday   = False
+            Let wcEvent.reptuesday  = False
+            Let wcEvent.repwednesday= False
+            Let wcEvent.repthursday = False
+            Let wcEvent.repfriday   = False
+            Let wcEvent.repsaturday = False
+            Let wcEvent.repsunday   = False
+            Case WeekDay(dateStart)
+              When 0 -- Sunday
+                Let wcEvent.repsunday   = True
+              When 1 -- Monday
+                Let wcEvent.repmonday   = True
+              When 2
+                Let wcEvent.reptuesday  = True
+              When 3
+                Let wcEvent.repwednesday= True
+              When 4
+                Let wcEvent.repthursday = True
+              When 5
+                Let wcEvent.repfriday   = True
+              When 6
+                Let wcEvent.repsaturday = True
+            End Case
+          Otherwise
+            Let dateEnd = dateStart
+            Let wcEvent.repeatTill  = Null
+            Let wcEvent.repmonday   = False
+            Let wcEvent.reptuesday  = False
+            Let wcEvent.repwednesday= False
+            Let wcEvent.repthursday = False
+            Let wcEvent.repfriday   = False
+            Let wcEvent.repsaturday = False
+            Let wcEvent.repsunday   = False
+        End Case
+        If wcEvent.recurrence > recurrenceNone Then
+          Next Field repeatTill
+        End If
+
+      On Change repmonday,reptuesday,repwednesday,repthursday,repfriday,repsaturday,repsunday
+        If Not (wcEvent.repmonday Or wcEvent.reptuesday Or wcEvent.repwednesday Or wcEvent.repthursday Or wcEvent.repfriday Or wcEvent.repsaturday Or wcEvent.repsunday) Then
+          Error %"At least one day needs to be selected"
+          Case WeekDay(dateStart)
+            When 0 -- Sunday
+              Let wcEvent.repsunday   = True
+            When 1 -- Monday
+              Let wcEvent.repmonday   = True
+            When 2
+              Let wcEvent.reptuesday  = True
+            When 3
+              Let wcEvent.repwednesday= True
+            When 4
+              Let wcEvent.repthursday = True
+            When 5
+              Let wcEvent.repfriday   = True
+            When 6
+              Let wcEvent.repsaturday = True
+          End Case
+          Next Field Current
         End If
 
       On Change fullDayLong
@@ -326,7 +530,18 @@ Public Function completeEvent(wcEvent)
           Call Dialog.setFieldActive('hourend',True)
         End If
 
-      After Field dateEnd
+      On Change dateStart
+        If dateEnd Is Not Null Then
+          If dateEnd < dateStart Then
+            Error %"Start date can't be higher than end date"
+            Next Field Current
+          End If
+        End If
+        If wcEvent.recurrence = recurrenceDay Then
+          Let dateEnd = dateStart
+        End If
+
+      On Change dateEnd
         If dateEnd < dateStart Then
           Error %"End date can't be lower than start date"
           Next Field Current
@@ -335,7 +550,7 @@ Public Function completeEvent(wcEvent)
           Message %"Warning: This event runs into colision with another"
         End If
 
-      After Field hourEnd
+      On Change hourEnd
         If dateEnd = dateStart Then
           If hourEnd < hourStart Then
             Error %"End Hour can't be lower than start hour"
@@ -346,12 +561,21 @@ Public Function completeEvent(wcEvent)
           Message %"Warning: This event runs into colision with another"
         End If
 
+      On Change repeatTill
+        If wcEvent.repeattill <= dateEnd Then
+          Error %"End date can't be equal or greater than end of reccurence date"
+          Next Field Current
+        End If
+
       On Action accept
         If checkEventColisions(wcEvent.id,wcEvent.userId,dateStart,hourStart,dateEnd,hourEnd) Then
           Error %"Error: This event runs into colision with another"
           Next Field dateStart
         End If
-        Exit Input
+        If wcEvent.repeatTill Is Null And wcEvent.recurrence > recurrenceNone Then
+          Next Field repeatTill
+        End If
+        Call Dialog.accept()
 
     End Input
 
@@ -430,6 +654,22 @@ Public Function launchFunction( fct )
   Call ui.Interface.frontCall("webcomponent","call",["formonly.calendarpipe","launchFunction",fct],[])
 End Function
 
+Private Function hideObject(objectType String, objectName String, toggle Boolean)
+  Define
+    fId ui.Form
+
+  Try
+    Let fId = ui.Window.getCurrent().getForm()
+    Case objectType
+      When "field"
+        Call fId.setFieldHidden(objectName,toggle)
+      When "element"
+        Call fId.setElementHidden(objectName,toggle)
+    End Case
+  Catch
+  End Try
+End Function
+
 Private Function setCalendarOptions()
   Open Window wCalOptions With Form "options"
 
@@ -497,7 +737,7 @@ Private Function sendEventsToWebComponent()
     Let strJsonEvents = '{"options":',jsonOptions.toString(),',"events":[]}'
   End If
 
-  If myDebug Then Display StrJsonEvents End If
+  If Debug Then Display StrJsonEvents End If
   Return  strJsonEvents
 End Function
 
@@ -505,6 +745,10 @@ Public Function displayEventDetails(rowNo)
   Define
     rowNo        Integer
 
+  If rowNo Is Null Then
+    Error "Event Id is Null, something went wrong"
+    Let rowNo = 0
+  End If
   If rowNo = 0 Then
     Display False To recurrent
     Display %"Undefined" To formonly.eventtitle
@@ -556,6 +800,15 @@ Private Function parseJsonEvent(strJsonEvent)
     Let wcEvent.UserId      = jsonEvent.get("userId")
     Let wcEvent.Start       = jsonEvent.get("start")
     Let wcEvent.End         = jsonEvent.get("end")
+    Let wcEvent.recurrence  = jsonEvent.get("recurrence")
+    Let wcEvent.repeattill  = jsonEvent.get("repeattill")
+    Let wcEvent.repmonday   = jsonEvent.get("repmonday")
+    Let wcEvent.reptuesday  = jsonEvent.get("reptuesday")
+    Let wcEvent.repwednesday= jsonEvent.get("repwednesday")
+    Let wcEvent.repthursday = jsonEvent.get("repthursday")
+    Let wcEvent.repfriday   = jsonEvent.get("repfriday")
+    Let wcEvent.repsaturday = jsonEvent.get("repsaturday")
+    Let wcEvent.repsunday   = jsonEvent.get("repsunday")
     Let wcEvent.Title       = jsonEvent.get("title")
     Let wcEvent.eventdesc   = jsonEvent.get("eventdesc")
     Let wcEvent.eventparent = jsonEvent.get("eventparent")
