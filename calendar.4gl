@@ -675,6 +675,12 @@ Private Function setCalendarOptions()
 
     Let Int_Flag = False
     Input By Name myCalOptions.* Attributes (Unbuffered, Without Defaults)
+      On Change timeslotsPerHour,timeslotHeight
+        If ((myCalOptions.timeslotsPerHour * myCalOptions.timeslotHeight)-11) <= 0 Then
+          Error "(time slots Per Hour x time slot Height) can't be lower or equal to 11"
+          Next Field Current
+        End If
+    End Input
 
   Close Window wCalOptions
   If Not Int_Flag Then
