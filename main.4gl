@@ -755,9 +755,9 @@ Function connectDb()
     firstname Char(20),
     lastname  Char(20)
     )
-  Insert Into users Values (1,"Jérémi","Quellebronn")
-  Insert Into users Values (2,"Georges","Lucas")
-  Insert Into users Values (3,"Stephen","King")
+  Insert Into users Values (1,"Joe","Doe")
+  Insert Into users Values (2,"Jim","Ask")
+  Insert Into users Values (3,"Luc","Sky")
 
   Create Table events (
     eventId      Integer,
